@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" type="text/css" href="prism.css">
+    <script src="prism.js"></script>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dani's Website</title>
+  </head>
+  <body>
+ 
+
+    <canvas id="bg"></canvas>   
+
+    <main>
+
+      <header>
+        <h1>Dani Amir</h1>
+        <p>Welcome to my website!</p>
+        <a href="https://github.com/Htmlpro19">GitHub</a>
+        <p></p>
+        <a href="#projects-link">Projects</a>
+        <p></p>
+        <a href="#contactinfo-link">Contact Information</a>
+        <p></p>
+        <a href="earesume.pdf"> Resume</a>
+
+      </header>
+
+      <section>
+        <h2>About me</h2>
+        <p>
+          Hi, my name is Dani Amir and I am a Computer Science major at the University of Texas at Austin. 
+          I love programming and I want to be at the forefront of emerging cutting-edge technology. 
+          I am passionate about building apps and have a high interest in game design and development. Some of my favorite games are Skyrim,
+          Halo 3, The Forest, Call of Duty Black Ops, and Star Wars Battlefront 2.
+        </p>
+      </section>
+
+      <section class="light">
+        <a id="projects-link"></a>
+        <h1>Projects</h1> 
+        <h2>Soccer Simulation - C++/Unreal Engine 4</h2>
+
+        <ul style=“list-style-type:square”>
+        
+        <li>A 5 vs 5 soccer game developed using Unreal Engine 4</li>
+        
+        <li>Designed and implemented an AI class for the players on the pitch</li>
+        
+        <li>Implemented behaviors such as dribbling, chasing the ball, and returning to home positions in C++</li>
+
+        <li>Used behavior trees to execute certain tasks based on conditions on the soccer pitch</li>
+        
+        </ul>
+
+        <h2>Code Snippets</h2>
+      
+        <button type="button" class="collapsible">AI Character Class</button>
+        <div class="content">
+          <pre class="line-numbers"><code class="language-clike">
+#include &quot;AICharacter.h&quot;
+
+// Sets default values
+AAICharacter::AAICharacter() {
+  // Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+  PrimaryActorTick.bCanEverTick = true;
+
+  // Sets up trigger component
+  TriggerComponent = CreateDefaultSubobject&lt;USphereComponent&gt;(TEXT(&quot;TriggerComponent&quot;));
+  TriggerComponent-&gt;AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
+  // Sets up material components
+  RedTeamMaterial = CreateDefaultSubobject&lt;UMaterial&gt;(TEXT(&quot;RedTeamMaterial&quot;));
+  BlueTeamMaterial = CreateDefaultSubobject&lt;UMaterial&gt;(TEXT(&quot;BlueTeamMaterial&quot;));
+}
+
+// Called every frame
+void AAICharacter::Tick(float DeltaTime) {
+  Super::Tick(DeltaTime);
+
+  heading = GetActorForwardVector();
+}
+
+// Called to bind functionality to input
+void AAICharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
+  Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+// Called when the game starts or when spawned
+void AAICharacter::BeginPlay() {
+  Super::BeginPlay();
+
+  TriggerComponent-&gt;OnComponentBeginOverlap.AddDynamic(this, &amp;AAICharacter::OnOverlapBegin);
+}
+
+// Returns if this character is the closest teammate to the ball
+bool AAICharacter::isClosestTeamMemberToBall()
+{
+  if (team)
+  {
+    return team-&gt;playerClosestToBall == this;
+  }
+  else
+  {
+    GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;TEAM IS NULL IN AICHARACTER&quot;));
+    return false;
+  }
+}
+
+// Returns if this character is controlling the ball
+bool AAICharacter::isControllingPlayer()
+{
+  if (team &amp;&amp; IsDribble)
+  {
+    GEngine-&gt;AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, FString::Printf(TEXT(&quot;Controlling Player has been set&quot;)));
+  
+    return team-&gt;controllingPlayer == this;
+  }
+  else
+  {
+    //GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;TEAM IS NULL IN AICHARACTER or IsDribble IS NOT TRUE&quot;));
+    return false;
+  }
+}
+
+// Called when defender overlaps with another actor
+void AAICharacter::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult&amp; SweepResult) {
+  // Casts the other actor to soccer ball
+  ASoccerBall* CollisionSoccerBall = Cast&lt;ASoccerBall&gt;(OtherActor);
+
+  // Checks if collided with soccer ball and not currently dribbling
+  if (CollisionSoccerBall &amp;&amp; !IsDribble) {
+    // Sets the soccer ball pointer for player
+    SoccerBall = CollisionSoccerBall;
+
+    // Handles soccer ball dribbling
+    Dribble();
+
+    //TEST
+    GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;IMMA DRIBBLE&quot;));
+  }
+}
+
+// Called for player kick 
+void AAICharacter::Kick() {
+  // Only kicks the ball if in front of player
+  if (SoccerBall &amp;&amp; IsDribble) {
+    // Lets go of the soccer ball
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(true);
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+
+    // Random vertical vector for lift
+    float LiftFactor = FMath::FRandRange(1.f, 2.f);
+    FVector LiftVector = FVector(0, 0, 7500 * LiftFactor);
+
+    // Creates vector for kick impulse
+    FVector KickVector = LiftVector + (GetActorForwardVector() * 20000);
+
+    // Applies impulse to soccer ball mesh
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;AddImpulseAtLocation(KickVector, SoccerBall-&gt;GetActorLocation());
+
+    // Enables collision for soccer ball
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+    // No longer dribbling
+    IsDribble = false;
+  }
+}
+
+// Called for player pass 
+void AAICharacter::Pass() {
+  // Only passes the ball if in front of player
+  if (SoccerBall &amp;&amp; IsDribble) {
+    // Lets go of the soccer ball
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(true);
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+
+    // Creates vector for pass impulse
+    FVector PassVector = GetActorForwardVector() * 17500;
+
+    // Applies impulse to soccer ball mesh
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;AddImpulseAtLocation(PassVector, SoccerBall-&gt;GetActorLocation());
+
+    // Enables collision for soccer ball
+    (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+    // No longer dribbling
+    IsDribble = false;
+  }
+}
+
+// Called when the play needs to dribble
+void AAICharacter::Dribble() {
+  // Player is currently dribbling
+  IsDribble = true;
+  team-&gt;controllingPlayer = this;
+
+  // Snaps the soccer ball to the player's socket
+  (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(false);
+  (SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+  (SoccerBall-&gt;GetStaticMeshComponent())-&gt;AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT(&quot;soccerBallSocket&quot;));
+}
+
+FVector AAICharacter::Seek(FVector targetPos)
+{
+  FVector desiredVelocity = (targetPos - GetActorLocation() * 10.0f);
+  desiredVelocity.Normalize();
+  return desiredVelocity - GetVelocity();
+}
+
+// Setter for the home region
+void AAICharacter::SetHomeRegion(ARegions* NewHomeRegion) {
+  HomeRegion = NewHomeRegion;
+}
+        </code>
+      </pre>
+    </div>
+        
+      <button type="button" class="collapsible">AI Chase Behavior</button>
+      <div class="content">
+      <pre class="line-numbers"><code class="language-clike">
+#include &quot;SoccerPitch.h&quot;
+#include &quot;DefenderAIController.h&quot;
+#include &quot;AICharacter.h&quot;
+#include &quot;ChaseBallTaskNode.h&quot;
+
+EBTNodeResult::Type UChaseBallTaskNode::ExecuteTask(UBehaviorTreeComponent&amp; OwnerComponent, uint8* NodeMemory) {
+	// Getting the AI controller
+	ADefenderAIController* AIController = Cast&lt;ADefenderAIController&gt;(OwnerComponent.GetAIOwner());
+
+	if (AIController) {
+		// Getting the soccer pitch and the AI character
+		ASoccerPitch* SoccerPitch = AIController-&gt;GetSoccerPitch();
+		AAICharacter* DefenderAI = AIController-&gt;GetAICharacter();
+
+		if (SoccerPitch &amp;&amp; DefenderAI) {
+		
+			// Check if this AI is the closest Team Member to the Ball, if it is, pursue the ball
+			if (DefenderAI-&gt;isClosestTeamMemberToBall())
+			{
+				AIController-&gt;MoveToLocation(DefenderAI-&gt;team-&gt;pitch-&gt;ball-&gt;GetActorLocation());
+				//GEngine-&gt;AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, FString::Printf(TEXT(&quot;Closest Player is: %d&quot;), DefenderAI-&gt;playerID));
+			}
+		}
+
+		// The task succeeded
+		return EBTNodeResult::Failed;
+	}
+
+	// The task failed
+	return EBTNodeResult::Succeeded;
+
+}
+      </code>
+    </pre>
+  </div>
+     
+      <button type="button" class="collapsible">AI Behavior Tree</button>
+      <div class="content">
+      <img src="ai.PNG" width="1550">
+      </div>
+     
+      <h2>Gameplay</h2>
+      
+      <iframe width="1000" height="600"
+      src="https://www.youtube.com/embed/x_5ZJ8B69fM">
+      </iframe>
+
+      </section>
+
+      <section>
+        <h2>VR Simon Says - Blueprints/Unreal Engine 4</h2>
+        <ul style=“list-style-type:square”>
+        
+          <li>VR Simon Says game developed using Unreal Engine 4</li>
+          
+          <li>Developed and designed a crowd simulation using Niagra and animations</li>
+          
+          <li>Implemented gameplay functionality such as interacting with buttons, advancing in rounds, winning state, and
+            losing state using Blueprints</li>
+
+          </ul>
+
+          <h2>Code Snippets</h2>
+      
+          <button type="button" class="collapsible">Color Sequence Control</button>
+          <div class="content">
+            <img src="blue1.PNG" width="1555">
+          </div>
+         
+          <button type="button" class="collapsible">Which Colors to Flash</button>
+          <div class="content">
+            <img src="blue2.PNG">
+          </div>
+
+          <button type="button" class="collapsible">Button Input Detection</button>
+          <div class="content">
+            <img src="blue3.PNG">
+          </div>
+          
+          <h2>Gameplay</h2>
+          <iframe width="1000" height="600"
+          src="https://www.youtube.com/embed/hUtETapZr5A">
+          </iframe>
+
+      </section>
+
+      <section>
+        <h2>Wipeout - C++/Godot</h2>
+
+        <ul style=“list-style-type:square”>
+        
+          <li>A game developed using the Godot engine where the player must get through an obstacle course and reach the
+            trophy at the end to win</li>
+
+          <li>Designed and created an obstacle course in Godot with 4 different obstacles</li>
+          
+          <li>Implemented scripts in C++ to animate the obstacle course and detect when the player has won</li>
+         
+          <li>Designed and implemented a networked multiplayer system that supports up to 2 players</li>
+        </ul>
+        
+          <h2>Code Snippets</h2>
+
+          <button type="button" class="collapsible">Win Detection</button>
+          <div class="content">
+          <pre class="line-numbers"><code class="language-clike">
+#include &quot;trophy.h&quot;
+#include &lt;SceneTree.hpp&gt;
+
+using namespace godot;
+
+void Trophy::_register_methods() {
+	register_method(&quot;_area_entered&quot;, &amp;Trophy::_area_entered);
+	register_method(&quot;_ready&quot;, &amp;Trophy::_ready);
+}
+
+void Trophy::_init() {
+	start = 0;
+}
+
+// Constructor for Trophy Object
+Trophy::Trophy() {
+
+}
+
+// Destructor for Trophy Object
+Trophy::~Trophy() {
+
+}
+
+// Intializer for the Trophy class
+void Trophy::_ready()
+{
+	audioNode = get_node(&quot;VictorySoundPlayer&quot;);
+	areaNode = get_node(&quot;Area&quot;);
+	area = godot::Object::cast_to&lt;Area&gt;(areaNode);
+	audioPlayer = godot::Object::cast_to&lt;AudioStreamPlayer&gt;(audioNode);
+
+  // Connects area object with body_entered signal
+	area-&gt;connect(&quot;body_entered&quot;, this, &quot;_area_entered&quot;);
+}
+
+// Function that triggers once the Trophy's area is entered
+void Trophy::_area_entered() {
+
+	Godot::print(&quot;CollisionDetected&quot;);
+
+  // Plays the audio only on the first collision
+	if (start == 1)
+	{
+		if (audioPlayer)
+		{
+			audioPlayer-&gt;play();
+		}
+
+    // Change the scene to the game over scene
+		get_tree()-&gt;change_scene(&quot;res://main_scenes/GameoverScreen.tscn&quot;);
+	}
+
+	start += 1;
+}
+            </code>
+          </pre>
+        </div>
+
+          <button type="button" class="collapsible">Networking Code</button>
+          <div class="content">
+          <pre class="line-numbers"><code class="language-clike">
+void GameManager::_host_start() {
+  // Creates and sets the server
+  network = NetworkedMultiplayerENet::_new();
+  network-&gt;create_server(port, max_players);
+  get_tree()-&gt;set_network_peer(network);
+
+  // Connects network signals to defined functions
+  network-&gt;connect(&quot;peer_connected&quot;, this, &quot;_player_connected&quot;);
+  network-&gt;connect(&quot;peer_disconnected&quot;, this, &quot;_player_disconnected&quot;);
+
+  // Stores clients name with network ID in the dictionary
+  local_player_id = get_tree()-&gt;get_network_unique_id();
+  player_names[0] = current_player_name;
+
+  //TEST Print statement
+  Godot::print(&quot;Server started!&quot;);
+}
+
+void GameManager::_player_connected(int player_id) {
+  Godot::print(&quot;Player connected!&quot;);
+}
+
+void GameManager::_player_disconnected(int player_id) {
+  Godot::print(&quot;Player disconnected!&quot;);
+  Node* player2 = get_tree()-&gt;get_root()-&gt;get_node(&quot;Player2&quot;);
+  if (player2)
+  {
+    get_tree()-&gt;get_root()-&gt;remove_child(player2);
+  }
+  else
+  {
+    Godot::print(&quot;Player2 node is null in game manager&quot;);
+  }
+  
+}
+
+void GameManager::_send_player_info(int client_id, String client_name) {
+  player_names[1] = client_name;
+  rpc(&quot;_update_player_names&quot;, player_names[0], player_names[1]);
+  rpc(&quot;_update_waiting_room&quot;);
+}
+
+void GameManager::_client_start() {
+  // Creates and sets the client
+  network = NetworkedMultiplayerENet::_new();
+  network-&gt;create_client(&quot;127.0.0.1&quot;, port);
+  get_tree()-&gt;set_network_peer(network);
+  player_ids[1] = get_tree()-&gt;get_network_unique_id();
+
+  // Connects network signals to defined functions
+  get_tree()-&gt;connect(&quot;connection_failed&quot;, this, &quot;_connected_fail&quot;);
+  get_tree()-&gt;connect(&quot;server_disconnected&quot;, this, &quot;_server_disconnected&quot;);
+  get_tree()-&gt;connect(&quot;connected_to_server&quot;, this, &quot;_connected_ok&quot;);
+
+  //TEST Print statement
+  Godot::print(&quot;...Attempting to join server...&quot;);
+}
+            </code>
+          </pre>
+        </div>
+
+          <h2>Gameplay</h2>
+          <iframe width="1000" height="600"
+          src="https://www.youtube.com/embed/QlupLVCiuCc">
+          </iframe>
+
+      </section>
+
+      <section>
+        <a id="contactinfo-link"></a>
+        <h2>Contact Information</h2>
+        <ul style=“list-style-type:square”>
+        
+          <li>Email: daniamir2001@yahoo.com</li>
+          
+          <li>LinkedIn: https://www.linkedin.com/in/dani-amir/ </li>
+          
+          </ul>
+      </section>
+
+     
+
+    </main>
+    
+    <script type="module" src="/main.js"></script>
+
+  </body>
+</html>
