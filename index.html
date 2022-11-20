@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-KRFXMJE6H4"></script>
     <script>
@@ -18,6 +19,7 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dani's Website</title>
+    
   </head>
   <body>
  
@@ -35,7 +37,7 @@
         <p></p>
         <a href="#contactinfo-link">Contact Information</a>
         <p></p>
-        <a href="earesume.pdf"> Resume</a>
+        <a href="2022newresume.pdf"> Resume</a>
 
       </header>
 
@@ -52,6 +54,197 @@
       <section class="light">
         <a id="projects-link"></a>
         <h1>Projects</h1> 
+        <h2>Automaton - C#/Unity</h2>
+
+        <ul style=“list-style-type:square”>
+        
+        <li>A horror game developed in Unity 3D where the player must collect clues, evade enemies, and escape a mansion</li>
+        
+        <li>Designed and implemented an enemy AI using a behavior tree with behaviors such as chasing, killing, patrolling, and
+          stalking</li>
+        
+        <li>Designed and implemented an AI director script in C# that gives hints to the enemy AI about the location of the player</li>
+        
+        </ul>
+
+        <h2>Code Snippets</h2>
+      
+        <button type="button" class="collapsible">AI Director Class</button>
+        <div class="content">
+          <pre class="line-numbers"><code class="language-clike">
+public class Director : MonoBehaviour
+{
+  // Declaring and Initializing variables
+  public GameObject player;                   // Reference to the player
+  public GameObject stalker;                  // Reference to the stalker
+  public List&#x3C;GameObject&#x3E; defAreaWaypoints;   // List of the default waypoints that the stalker will follow
+
+  // Called when the script is instantiated
+  private void Start()
+  {
+      // Starts the enemy on the default path
+      stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints = defAreaWaypoints;
+
+      Debug.Log(&#x22;defArea: &#x22; + defAreaWaypoints[0]);
+      Debug.Log(&#x22;Enemy Waypoints&#x22; + stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints[0]);
+      
+      // Starts the hint routine
+      StartCoroutine(GiveHintRoutine());
+  }
+
+  // Coroutine for given the stalker a hint
+  private IEnumerator GiveHintRoutine()
+  {
+      // Defines the amount of time between coroutine execution
+      WaitForSeconds waitTime = new WaitForSeconds(15f);
+
+      // Continuously runs the hint given function
+      while (true)
+      {
+          yield return waitTime;
+          GiveHint();
+      }
+  }
+
+  // Function that gives hint to the enemy
+  private void GiveHint()
+  {
+      stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints = player.GetComponent&#x3C;PlayerAreaTracker&#x3E;().areaEntered.transform.parent.GetComponent&#x3C;CollisionDetection&#x3E;().waypointsList;
+      Debug.Log(player.GetComponent&#x3C;PlayerAreaTracker&#x3E;().areaEntered.transform.parent.GetComponent&#x3C;CollisionDetection&#x3E;().waypointsList[0]);
+  }
+}
+            
+        </code>
+      </pre>
+    </div>
+        
+      <button type="button" class="collapsible">AI Patrolling Behavior</button>
+      <div class="content">
+      <pre class="line-numbers"><code class="language-clike">
+public class TaskPatrol : Action
+{
+    // Declaring and Initializing variables
+    [SerializeField]
+    private GameObject enemy;               // Reference to the enemy game object
+    [SerializeField]
+    private float speed;                    // Patrolling speed of the enemy
+    private int currentWaypointIndex = 0;   // Index of the waypoint currently followed by the enemy
+
+    // Task executed by the behavior tree
+    public override TaskStatus OnUpdate()
+    {
+        // Only executute when condition is met
+        if (!enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().isPatrol) 
+        {
+            return TaskStatus.Failure;
+        }
+
+        // Animate patrolling
+        enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isRunning&#x22;, false);
+        enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isPatrolling&#x22;, true);
+
+        // Gets the list of waypoints currently followed by the stalker
+        List&#x3C;GameObject&#x3E; waypoints = enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints;
+
+        // Makes sure the enemy is able to move and the speed is slowed
+        enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().isStopped = false;
+        enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().speed = speed;
+
+        // Set the general viewing radius
+        enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewRadius = 14;
+
+        enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewAngle = 210;
+
+        // Resets the waypoint index if it is over the length of the waypoint list
+        if (currentWaypointIndex == int.MaxValue)
+        {
+            currentWaypointIndex = 0;
+        }
+
+        // Gets the current waypoint that the enemy is following
+        GameObject wp = waypoints[currentWaypointIndex % waypoints.Count];
+
+        //Debug.Log(waypoints[currentWaypointIndex % waypoints.Count]);
+        
+        // The enemy is close enough to the waypoint
+        if (Vector3.Distance(enemy.transform.position, wp.transform.position) &#x3C; 1.5f)
+        {
+            currentWaypointIndex += 1;
+        }
+        // Enemy follows the current waypoint
+        else
+        {
+            enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().destination = wp.transform.position;
+        }
+
+        return TaskStatus.Success;
+    }
+}
+      </code>
+    </pre>
+  </div>
+  <button type="button" class="collapsible">AI Chase Behavior</button>
+  <div class="content">
+  <pre class="line-numbers"><code class="language-clike">
+public class TaskChase : Action
+{
+    // Declaring and Initializing variables
+    [SerializeField]
+    private GameObject enemy;             // Reference to the enemy game object
+    [SerializeField] 
+    private GameObject player;            // Reference to the player game object
+
+    // Task executed by the behavior tree
+    public override TaskStatus OnUpdate()
+    {
+        // Update the last player position
+        enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().lastPlayerPosition = player.transform.position;
+
+        // Enemy can see the player
+        if (enemy.GetComponent&#x3C;StalkerViewing&#x3E;().isPlayerGeneralSeen) 
+        {
+            // Animates running
+            enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isPatrolling&#x22;, false);
+            enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isRunning&#x22;, true);
+
+            // Sets multiple attributes of the navmesh for chasing the player
+            enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().speed = 3.0f;
+            enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().isStopped = false;
+            enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().SetDestination(player.transform.position);
+
+            // Increase the general viewing radius
+            enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewRadius = 17;
+
+            //  Increase the general view radius
+            enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewAngle = 250;
+
+            return TaskStatus.Success;
+        }
+        else
+        {
+            enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().EnemyStatePatrol();
+            return TaskStatus.Failure;
+        }
+    }
+}
+  </code>
+</pre>
+</div>
+     
+      <button type="button" class="collapsible">AI Behavior Tree</button>
+      <div class="content">
+      <img src="AutomatonAI.PNG" width="1550">
+      </div>
+     
+      <h2>Gameplay</h2>
+      
+      <iframe width="1000" height="600"
+      src="https://www.youtube.com/embed/6i61CWoGUeo">
+      </iframe>
+
+      </section>
+
+      <section class="light">
         <h2>Soccer Simulation - C++/Unreal Engine 4</h2>
 
         <ul style=“list-style-type:square”>
