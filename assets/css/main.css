@@ -2682,9 +2682,10 @@ input, select, textarea {
 
 		.image.vid {
 			display: block;
-			margin: 0 0 10em 0;
+			margin: 0 0 1em 0;
 			width: 100%;
 			height: 600px;
+			border: 10px solid #efa8b0; /* Example: 5px solid orange border */
 		}
 
 /* List */
@@ -4136,7 +4137,7 @@ input, select, textarea {
 	align-items: center;
 	height: 50px; /* Example height - adjust as needed */
 	width: 200px; /* Example width - adjust as needed */
-	background-color: #8cc9f0; /* or any color you prefer */
+	background-color: #efa8b0; /* or any color you prefer */
 	color: #0deec1; /* or any color you prefer */
 	cursor: pointer;
 	padding: 18px;
@@ -4150,7 +4151,7 @@ input, select, textarea {
   
   .collapsible:after {
 	content: '\002B'; /* Unicode character for "+" sign */
-	color: #777;
+	color: #ffffff;
 	font-weight: bold;
 	float: right;
 	margin-left: 5px;
@@ -4158,4 +4159,21 @@ input, select, textarea {
   
   .collapsible.active:after {
 	content: "\2212"; /* Unicode character for "-" sign */
+  }
+
+  .collapsible:hover {
+	background-color: #efa8b09d; /* Darkens the button slightly on hover for visual feedback */
+  }
+
+  .project-page-background
+  {
+	background-color: #ffffff;
+	padding: 30px; /* This extends the background 20px beyond the content on all sides */
+	margin: -30px; /* Optionally, this can pull the edges of the div back to its original boundaries if needed */
+	border-radius: 15px; /* Rounds the corners. Adjust the pixel value to your preference */
+  }
+
+  .project-page-subtitle
+  {
+	color:#333333
   }
