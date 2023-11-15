@@ -4171,9 +4171,21 @@ input, select, textarea {
 	padding: 30px; /* This extends the background 20px beyond the content on all sides */
 	margin: -30px; /* Optionally, this can pull the edges of the div back to its original boundaries if needed */
 	border-radius: 15px; /* Rounds the corners. Adjust the pixel value to your preference */
+	margin-top: 100px; /* Adds a 20px margin to the top */
   }
 
   .project-page-subtitle
   {
-	color:#333333
+	color:#333333;
+	font-weight: bold; /* Makes the text bold */
+  }
+
+  .project-page-title
+  {
+	color:#333333;
+	font-weight: bold; /* Makes the text bold */
+	display: flex;
+	justify-content: center; /* Centers content horizontally */
+	align-items: center; /* Centers content vertically */
+	text-align: center; /* Ensures text is centered if it wraps to a new line */
   }
