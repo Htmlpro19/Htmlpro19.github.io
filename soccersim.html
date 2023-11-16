@@ -1,0 +1,283 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Soccer Simulation</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" type="text/css" href="prism.css">
+		<script src="prism.js"></script>
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+				<!-- Header -->
+				<nav class="new-nav">
+					<ul>
+						<li><a href="index.html#intro" class="active">About Me</a></li>
+						<li><a href="index.html#first">Work Experience</a></li>
+						<li><a href="index.html#second">Projects</a></li>
+						<li><a href="#footer">Contact Information</a></li>
+					</ul>
+				</nav>
+
+				<!-- Main -->
+					<div class="project-page-background">
+						
+							
+					
+						<!-- Content -->
+							<section class="main">
+								<h1 class="project-page-title">Soccer Simulation - Unreal Engine 4/C++</h1>
+								<h2 class="project-page-subtitle">Gameplay</h2>
+								<iframe class="image vid"
+										src="https://www.youtube.com/embed/x_5ZJ8B69fM">
+								</iframe>
+								<h2 class="project-page-subtitle">Overview</h2>
+								<ul class="project-page-subtitle">
+									<li>A 5 vs 5 soccer game developed using Unreal Engine 4</li>
+        
+									<li>Designed and implemented an AI class for the players on the pitch</li>
+									
+									<li>Implemented behaviors such as dribbling, chasing the ball, and returning to home positions in C++</li>
+							
+									<li>Used behavior trees to execute certain tasks based on conditions on the soccer pitch</li>
+								</ul>
+								<h2 class="project-page-subtitle">Code Snippets</h2>
+									<button class="collapsible">AI Character Class</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">#include &quot;AICharacter.h&quot;
+
+// Sets default values
+AAICharacter::AAICharacter() {
+	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
+	PrimaryActorTick.bCanEverTick = true;
+
+	// Sets up trigger component
+	TriggerComponent = CreateDefaultSubobject&lt;USphereComponent&gt;(TEXT(&quot;TriggerComponent&quot;));
+	TriggerComponent-&gt;AttachToComponent(RootComponent, FAttachmentTransformRules::KeepRelativeTransform);
+
+	// Sets up material components
+	RedTeamMaterial = CreateDefaultSubobject&lt;UMaterial&gt;(TEXT(&quot;RedTeamMaterial&quot;));
+	BlueTeamMaterial = CreateDefaultSubobject&lt;UMaterial&gt;(TEXT(&quot;BlueTeamMaterial&quot;));
+}
+
+// Called every frame
+void AAICharacter::Tick(float DeltaTime) {
+	Super::Tick(DeltaTime);
+
+	heading = GetActorForwardVector();
+}
+
+// Called to bind functionality to input
+void AAICharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) {
+	Super::SetupPlayerInputComponent(PlayerInputComponent);
+}
+
+// Called when the game starts or when spawned
+void AAICharacter::BeginPlay() {
+	Super::BeginPlay();
+
+	TriggerComponent-&gt;OnComponentBeginOverlap.AddDynamic(this, &amp;AAICharacter::OnOverlapBegin);
+}
+
+// Returns if this character is the closest teammate to the ball
+bool AAICharacter::isClosestTeamMemberToBall()
+{
+	if (team)
+	{
+	return team-&gt;playerClosestToBall == this;
+	}
+	else
+	{
+	GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;TEAM IS NULL IN AICHARACTER&quot;));
+	return false;
+	}
+}
+
+// Returns if this character is controlling the ball
+bool AAICharacter::isControllingPlayer()
+{
+	if (team &amp;&amp; IsDribble)
+	{
+	GEngine-&gt;AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, FString::Printf(TEXT(&quot;Controlling Player has been set&quot;)));
+	
+	return team-&gt;controllingPlayer == this;
+	}
+	else
+	{
+	//GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;TEAM IS NULL IN AICHARACTER or IsDribble IS NOT TRUE&quot;));
+	return false;
+	}
+}
+
+// Called when defender overlaps with another actor
+void AAICharacter::OnOverlapBegin(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult&amp; SweepResult) {
+	// Casts the other actor to soccer ball
+	ASoccerBall* CollisionSoccerBall = Cast&lt;ASoccerBall&gt;(OtherActor);
+
+	// Checks if collided with soccer ball and not currently dribbling
+	if (CollisionSoccerBall &amp;&amp; !IsDribble) {
+	// Sets the soccer ball pointer for player
+	SoccerBall = CollisionSoccerBall;
+
+	// Handles soccer ball dribbling
+	Dribble();
+
+	//TEST
+	GEngine-&gt;AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, TEXT(&quot;IMMA DRIBBLE&quot;));
+	}
+}
+
+// Called for player kick 
+void AAICharacter::Kick() {
+	// Only kicks the ball if in front of player
+	if (SoccerBall &amp;&amp; IsDribble) {
+	// Lets go of the soccer ball
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(true);
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+
+	// Random vertical vector for lift
+	float LiftFactor = FMath::FRandRange(1.f, 2.f);
+	FVector LiftVector = FVector(0, 0, 7500 * LiftFactor);
+
+	// Creates vector for kick impulse
+	FVector KickVector = LiftVector + (GetActorForwardVector() * 20000);
+
+	// Applies impulse to soccer ball mesh
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;AddImpulseAtLocation(KickVector, SoccerBall-&gt;GetActorLocation());
+
+	// Enables collision for soccer ball
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	// No longer dribbling
+	IsDribble = false;
+	}
+}
+
+// Called for player pass 
+void AAICharacter::Pass() {
+	// Only passes the ball if in front of player
+	if (SoccerBall &amp;&amp; IsDribble) {
+	// Lets go of the soccer ball
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(true);
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;DetachFromComponent(FDetachmentTransformRules(EDetachmentRule::KeepRelative, false));
+
+	// Creates vector for pass impulse
+	FVector PassVector = GetActorForwardVector() * 17500;
+
+	// Applies impulse to soccer ball mesh
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;AddImpulseAtLocation(PassVector, SoccerBall-&gt;GetActorLocation());
+
+	// Enables collision for soccer ball
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+
+	// No longer dribbling
+	IsDribble = false;
+	}
+}
+
+// Called when the play needs to dribble
+void AAICharacter::Dribble() {
+	// Player is currently dribbling
+	IsDribble = true;
+	team-&gt;controllingPlayer = this;
+
+	// Snaps the soccer ball to the player's socket
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetSimulatePhysics(false);
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
+	(SoccerBall-&gt;GetStaticMeshComponent())-&gt;AttachToComponent(GetMesh(), FAttachmentTransformRules(EAttachmentRule::SnapToTarget, true), TEXT(&quot;soccerBallSocket&quot;));
+}
+
+FVector AAICharacter::Seek(FVector targetPos)
+{
+	FVector desiredVelocity = (targetPos - GetActorLocation() * 10.0f);
+	desiredVelocity.Normalize();
+	return desiredVelocity - GetVelocity();
+}
+
+// Setter for the home region
+void AAICharacter::SetHomeRegion(ARegions* NewHomeRegion) {
+	HomeRegion = NewHomeRegion;
+}</code></pre></div>
+									<button class="collapsible">AI Chase Behavior</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">#include &quot;SoccerPitch.h&quot;
+#include &quot;DefenderAIController.h&quot;
+#include &quot;AICharacter.h&quot;
+#include &quot;ChaseBallTaskNode.h&quot;
+
+EBTNodeResult::Type UChaseBallTaskNode::ExecuteTask(UBehaviorTreeComponent&amp; OwnerComponent, uint8* NodeMemory) {
+	// Getting the AI controller
+	ADefenderAIController* AIController = Cast&lt;ADefenderAIController&gt;(OwnerComponent.GetAIOwner());
+
+	if (AIController) {
+		// Getting the soccer pitch and the AI character
+		ASoccerPitch* SoccerPitch = AIController-&gt;GetSoccerPitch();
+		AAICharacter* DefenderAI = AIController-&gt;GetAICharacter();
+
+		if (SoccerPitch &amp;&amp; DefenderAI) {
+		
+			// Check if this AI is the closest Team Member to the Ball, if it is, pursue the ball
+			if (DefenderAI-&gt;isClosestTeamMemberToBall())
+			{
+				AIController-&gt;MoveToLocation(DefenderAI-&gt;team-&gt;pitch-&gt;ball-&gt;GetActorLocation());
+				//GEngine-&gt;AddOnScreenDebugMessage(-1, 5.f, FColor::Orange, FString::Printf(TEXT(&quot;Closest Player is: %d&quot;), DefenderAI-&gt;playerID));
+			}
+		}
+
+		// The task succeeded
+		return EBTNodeResult::Failed;
+	}
+
+	// The task failed
+	return EBTNodeResult::Succeeded;
+
+}</code></pre></div>
+									<button class="collapsible">AI Behavior Tree</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;">
+	<img src="ai.PNG" class="image fit">
+</div>
+							</section>
+					</div>
+					<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Contact information</h2>
+							<dl class="alt">
+								<dt>Linkedin</dt>
+								<a href="https://www.linkedin.com/in/dani-amir/"><dd>https://www.linkedin.com/in/dani-amir/</dd></a>
+								<dt>Email</dt>
+								<dd><a href="#">daniamir2001@yahoo.com</a></dd>
+							</dl>
+							<ul class="icons">
+								<li><a href="https://github.com/Htmlpro19/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="https://www.linkedin.com/in/dani-amir/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+							</ul>
+						</section>
+						<p class="copyright">&copy; Dani Amir. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

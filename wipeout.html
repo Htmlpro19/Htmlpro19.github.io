@@ -1,0 +1,205 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Wipeout</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" type="text/css" href="prism.css">
+		<script src="prism.js"></script>
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+				<!-- Header -->
+				<nav class="new-nav">
+					<ul>
+						<li><a href="index.html#intro" class="active">About Me</a></li>
+						<li><a href="index.html#first">Work Experience</a></li>
+						<li><a href="index.html#second">Projects</a></li>
+						<li><a href="#footer">Contact Information</a></li>
+					</ul>
+				</nav>
+
+				<!-- Main -->
+					<div class="project-page-background">
+						
+							
+					
+						<!-- Content -->
+							<section class="main">
+								<h1 class="project-page-title">Wipeout - Godot/C++</h1>
+								<h2 class="project-page-subtitle">Gameplay</h2>
+								<iframe class="image vid"
+										src="https://www.youtube.com/embed/QlupLVCiuCc">
+								</iframe>
+								<h2 class="project-page-subtitle">Overview</h2>
+								<ul class="project-page-subtitle">
+									<li>A game developed using the Godot engine where the player must get through an obstacle course and reach the
+										trophy at the end to win</li>
+							
+									  <li>Designed and created an obstacle course in Godot with 4 different obstacles</li>
+									  
+									  <li>Implemented scripts in C++ to animate the obstacle course and detect when the player has won</li>
+									 
+									  <li>Designed and implemented a networked multiplayer system that supports up to 2 players</li>
+								</ul>
+								<h2 class="project-page-subtitle">Code Snippets</h2>
+									<button class="collapsible">Win Detection</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">#include &quot;trophy.h&quot;
+#include &lt;SceneTree.hpp&gt;
+
+using namespace godot;
+
+void Trophy::_register_methods() {
+	register_method(&quot;_area_entered&quot;, &amp;Trophy::_area_entered);
+	register_method(&quot;_ready&quot;, &amp;Trophy::_ready);
+}
+
+void Trophy::_init() {
+	start = 0;
+}
+
+// Constructor for Trophy Object
+Trophy::Trophy() {
+
+}
+
+// Destructor for Trophy Object
+Trophy::~Trophy() {
+
+}
+
+// Intializer for the Trophy class
+void Trophy::_ready()
+{
+	audioNode = get_node(&quot;VictorySoundPlayer&quot;);
+	areaNode = get_node(&quot;Area&quot;);
+	area = godot::Object::cast_to&lt;Area&gt;(areaNode);
+	audioPlayer = godot::Object::cast_to&lt;AudioStreamPlayer&gt;(audioNode);
+
+	// Connects area object with body_entered signal
+	area-&gt;connect(&quot;body_entered&quot;, this, &quot;_area_entered&quot;);
+}
+
+// Function that triggers once the Trophy's area is entered
+void Trophy::_area_entered() {
+
+	Godot::print(&quot;CollisionDetected&quot;);
+
+	// Plays the audio only on the first collision
+	if (start == 1)
+	{
+		if (audioPlayer)
+		{
+			audioPlayer-&gt;play();
+		}
+
+	// Change the scene to the game over scene
+		get_tree()-&gt;change_scene(&quot;res://main_scenes/GameoverScreen.tscn&quot;);
+	}
+
+	start += 1;
+}</code></pre></div>
+									<button class="collapsible">Networking Code</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">void GameManager::_host_start() {
+  // Creates and sets the server
+  network = NetworkedMultiplayerENet::_new();
+  network-&gt;create_server(port, max_players);
+  get_tree()-&gt;set_network_peer(network);
+
+  // Connects network signals to defined functions
+  network-&gt;connect(&quot;peer_connected&quot;, this, &quot;_player_connected&quot;);
+  network-&gt;connect(&quot;peer_disconnected&quot;, this, &quot;_player_disconnected&quot;);
+
+  // Stores clients name with network ID in the dictionary
+  local_player_id = get_tree()-&gt;get_network_unique_id();
+  player_names[0] = current_player_name;
+
+  //TEST Print statement
+  Godot::print(&quot;Server started!&quot;);
+}
+
+void GameManager::_player_connected(int player_id) {
+  Godot::print(&quot;Player connected!&quot;);
+}
+
+void GameManager::_player_disconnected(int player_id) {
+  Godot::print(&quot;Player disconnected!&quot;);
+  Node* player2 = get_tree()-&gt;get_root()-&gt;get_node(&quot;Player2&quot;);
+  if (player2)
+  {
+    get_tree()-&gt;get_root()-&gt;remove_child(player2);
+  }
+  else
+  {
+    Godot::print(&quot;Player2 node is null in game manager&quot;);
+  }
+  
+}
+
+void GameManager::_send_player_info(int client_id, String client_name) {
+  player_names[1] = client_name;
+  rpc(&quot;_update_player_names&quot;, player_names[0], player_names[1]);
+  rpc(&quot;_update_waiting_room&quot;);
+}
+
+void GameManager::_client_start() {
+  // Creates and sets the client
+  network = NetworkedMultiplayerENet::_new();
+  network-&gt;create_client(&quot;127.0.0.1&quot;, port);
+  get_tree()-&gt;set_network_peer(network);
+  player_ids[1] = get_tree()-&gt;get_network_unique_id();
+
+  // Connects network signals to defined functions
+  get_tree()-&gt;connect(&quot;connection_failed&quot;, this, &quot;_connected_fail&quot;);
+  get_tree()-&gt;connect(&quot;server_disconnected&quot;, this, &quot;_server_disconnected&quot;);
+  get_tree()-&gt;connect(&quot;connected_to_server&quot;, this, &quot;_connected_ok&quot;);
+
+  //TEST Print statement
+  Godot::print(&quot;...Attempting to join server...&quot;);
+}</code></pre></div>
+							</section>
+					</div>
+					<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Contact information</h2>
+							<dl class="alt">
+								<dt>Linkedin</dt>
+								<a href="https://www.linkedin.com/in/dani-amir/"><dd>https://www.linkedin.com/in/dani-amir/</dd></a>
+								<dt>Email</dt>
+								<dd><a href="#">daniamir2001@yahoo.com</a></dd>
+							</dl>
+							<ul class="icons">
+								<li><a href="https://github.com/Htmlpro19/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="https://www.linkedin.com/in/dani-amir/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+							</ul>
+						</section>
+						<p class="copyright">&copy; Dani Amir. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
