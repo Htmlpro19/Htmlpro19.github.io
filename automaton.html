@@ -1,0 +1,240 @@
+<!DOCTYPE HTML>
+<!--
+	Stellar by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Automaton</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<link rel="stylesheet" type="text/css" href="prism.css">
+		<script src="prism.js"></script>
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+
+				<!-- Header -->
+				<!-- Nav -->
+				<nav class="new-nav">
+					<ul>
+						<li><a href="index.html#intro" class="active">About Me</a></li>
+						<li><a href="index.html#first">Work Experience</a></li>
+						<li><a href="index.html#second">Projects</a></li>
+						<li><a href="#footer">Contact Information</a></li>
+					</ul>
+				</nav>
+
+				<!-- Main -->
+					<div class="project-page-background">
+						
+							
+					
+						<!-- Content -->
+							<section class="main">
+								<h1 class="project-page-title">Automaton - Unity/C#</h1>
+								<h2 class="project-page-subtitle">Gameplay</h2>
+								<iframe class="image vid"
+										src="https://www.youtube.com/embed/6i61CWoGUeo">
+								</iframe>
+								<h2 class="project-page-subtitle">Overview</h2>
+								<ul class="project-page-subtitle">
+									<li>A horror game developed in Unity 3D where the player must collect clues, evade enemies, and escape a mansion</li>
+									
+									<li>Designed and implemented an enemy AI using a behavior tree with behaviors such as chasing, killing, patrolling, and
+									  stalking</li>
+									
+									<li>Designed and implemented an AI director script in C# that gives hints to the enemy AI about the location of the player</li>
+								</ul>
+								<h2 class="project-page-subtitle">Code Snippets</h2>
+									<button class="collapsible">AI Director Class</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">public class Director : MonoBehaviour
+{
+	// Declaring and Initializing variables
+	public GameObject player;                   // Reference to the player
+	public GameObject stalker;                  // Reference to the stalker
+	public List&#x3C;GameObject&#x3E; defAreaWaypoints;   // List of the default waypoints that the stalker will follow
+
+	// Called when the script is instantiated
+	private void Start()
+	{
+		// Starts the enemy on the default path
+		stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints = defAreaWaypoints;
+
+		Debug.Log(&#x22;defArea: &#x22; + defAreaWaypoints[0]);
+		Debug.Log(&#x22;Enemy Waypoints&#x22; + stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints[0]);
+		
+		// Starts the hint routine
+		StartCoroutine(GiveHintRoutine());
+	}
+
+	// Coroutine for given the stalker a hint
+	private IEnumerator GiveHintRoutine()
+	{
+		// Defines the amount of time between coroutine execution
+		WaitForSeconds waitTime = new WaitForSeconds(15f);
+
+		// Continuously runs the hint given function
+		while (true)
+		{
+			yield return waitTime;
+			GiveHint();
+		}
+	}
+
+	// Function that gives hint to the enemy
+	private void GiveHint()
+	{
+		stalker.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints = player.GetComponent&#x3C;PlayerAreaTracker&#x3E;().areaEntered.transform.parent.GetComponent&#x3C;CollisionDetection&#x3E;().waypointsList;
+		Debug.Log(player.GetComponent&#x3C;PlayerAreaTracker&#x3E;().areaEntered.transform.parent.GetComponent&#x3C;CollisionDetection&#x3E;().waypointsList[0]);
+	}
+}</code></pre></div>
+									<button class="collapsible">AI Patrolling Behavior</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">public class TaskPatrol : Action
+{
+	// Declaring and Initializing variables
+	[SerializeField]
+	private GameObject enemy;               // Reference to the enemy game object
+	[SerializeField]
+	private float speed;                    // Patrolling speed of the enemy
+	private int currentWaypointIndex = 0;   // Index of the waypoint currently followed by the enemy
+
+	// Task executed by the behavior tree
+	public override TaskStatus OnUpdate()
+	{
+		// Only executute when condition is met
+		if (!enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().isPatrol) 
+		{
+			return TaskStatus.Failure;
+		}
+
+		// Animate patrolling
+		enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isRunning&#x22;, false);
+		enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isPatrolling&#x22;, true);
+
+		// Gets the list of waypoints currently followed by the stalker
+		List&#x3C;GameObject&#x3E; waypoints = enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().waypoints;
+
+		// Makes sure the enemy is able to move and the speed is slowed
+		enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().isStopped = false;
+		enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().speed = speed;
+
+		// Set the general viewing radius
+		enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewRadius = 14;
+
+		enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewAngle = 210;
+
+		// Resets the waypoint index if it is over the length of the waypoint list
+		if (currentWaypointIndex == int.MaxValue)
+		{
+			currentWaypointIndex = 0;
+		}
+
+		// Gets the current waypoint that the enemy is following
+		GameObject wp = waypoints[currentWaypointIndex % waypoints.Count];
+
+		//Debug.Log(waypoints[currentWaypointIndex % waypoints.Count]);
+		
+		// The enemy is close enough to the waypoint
+		if (Vector3.Distance(enemy.transform.position, wp.transform.position) &#x3C; 1.5f)
+		{
+			currentWaypointIndex += 1;
+		}
+		// Enemy follows the current waypoint
+		else
+		{
+			enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().destination = wp.transform.position;
+		}
+
+		return TaskStatus.Success;
+	}
+}</code></pre></div>
+									<button class="collapsible">AI Chase Behavior</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;"><pre class="line-numbers"><code class="language-clike">public class TaskChase : Action
+{
+	// Declaring and Initializing variables
+	[SerializeField]
+	private GameObject enemy;             // Reference to the enemy game object
+	[SerializeField] 
+	private GameObject player;            // Reference to the player game object
+
+	// Task executed by the behavior tree
+	public override TaskStatus OnUpdate()
+	{
+		// Update the last player position
+		enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().lastPlayerPosition = player.transform.position;
+
+		// Enemy can see the player
+		if (enemy.GetComponent&#x3C;StalkerViewing&#x3E;().isPlayerGeneralSeen) 
+		{
+			// Animates running
+			enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isPatrolling&#x22;, false);
+			enemy.GetComponent&#x3C;Animator&#x3E;().SetBool(&#x22;isRunning&#x22;, true);
+
+			// Sets multiple attributes of the navmesh for chasing the player
+			enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().speed = 3.0f;
+			enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().isStopped = false;
+			enemy.GetComponent&#x3C;NavMeshAgent&#x3E;().SetDestination(player.transform.position);
+
+			// Increase the general viewing radius
+			enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewRadius = 17;
+
+			//  Increase the general view radius
+			enemy.GetComponent&#x3C;StalkerViewing&#x3E;().generalViewAngle = 250;
+
+			return TaskStatus.Success;
+		}
+		else
+		{
+			enemy.GetComponent&#x3C;StalkerEnemy&#x3E;().EnemyStatePatrol();
+			return TaskStatus.Failure;
+		}
+	}
+}</code></pre></div>
+									<button class="collapsible">AI Behavior Tree</button>
+<!-- Code Snippet -->
+<div class="content" style="display: none;">
+	<img src="AutomatonAI.PNG" class="image fit">
+</div>
+							</section>
+					</div>
+					<!-- Footer -->
+					<footer id="footer">
+						<section>
+							<h2>Contact information</h2>
+							<dl class="alt">
+								<dt>Linkedin</dt>
+								<a href="https://www.linkedin.com/in/dani-amir/"><dd>https://www.linkedin.com/in/dani-amir/</dd></a>
+								<dt>Email</dt>
+								<dd><a href="#">daniamir2001@yahoo.com</a></dd>
+							</dl>
+							<ul class="icons">
+								<li><a href="https://github.com/Htmlpro19/" class="icon brands fa-github alt"><span class="label">GitHub</span></a></li>
+								<li><a href="https://www.linkedin.com/in/dani-amir/" class="icon brands fa-linkedin alt"><span class="label">Linkedin</span></a></li>
+							</ul>
+						</section>
+						<p class="copyright">&copy; Dani Amir. Design: <a href="https://html5up.net">HTML5 UP</a>.</p>
+					</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>

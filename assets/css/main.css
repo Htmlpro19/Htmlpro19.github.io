@@ -528,23 +528,26 @@ input, select, textarea {
 		border: solid 1px;
 		font-family: "Courier New", monospace;
 		font-size: 0.9em;
-		margin: 0 0.25em;
-		padding: 0.25em 0.65em;
 	}
 
 	pre {
 		-webkit-overflow-scrolling: touch;
 		font-family: "Courier New", monospace;
 		font-size: 0.9em;
-		margin: 0 0 2em 0;
-	}
-
-		pre code {
-			display: block;
-			line-height: 1.75;
-			padding: 1em 1.5em;
-			overflow-x: auto;
-		}
+		margin: 0;
+		padding: 1em; /* Consistent padding */
+		box-sizing: border-box; /* Include padding and border in the element's width and height */
+		overflow-x: auto; /* Allows horizontal scrolling */
+		white-space: pre-wrap; /* Wraps text */
+		word-break: break-word; /* Ensures long words do not cause layout issues */
+	  }
+	  
+	  pre code {
+		display: block;
+		line-height: 1.75;
+		padding: 0; /* Remove padding from <code> if <pre> already has it */
+	  }
+	  
 
 	hr {
 		border: 0;
@@ -590,7 +593,7 @@ input, select, textarea {
 
 	code {
 		background: rgba(255, 255, 255, 0.075);
-		border-color: rgba(255, 255, 255, 0.35);
+		border-color: rgba(255, 255, 255, 0);
 	}
 
 	hr {
@@ -4100,11 +4103,13 @@ input, select, textarea {
   .project-image-container {
 	position: relative;
 	overflow: hidden; /* Prevents the scaled image from overflowing the container */
-	border: 3px solid transparent; /* Invisible border to prevent layout shift on hover */
+	border: 5px solid #efa8b0; /* Highlighted border on hover with slight transparency */
+	height: 200px; /* Fixed height for all containers */
+	width: 400px;
   }
 
   .project-image-container:hover {
-	border: 3px solid rgba(157, 0, 255, 0.6); /* Highlighted border on hover with slight transparency */
+	border: 5px solid #eb7684; /* Highlighted border on hover with slight transparency */
 	cursor: pointer; /* Change the cursor to indicate interactivity */
   }
   
@@ -4169,8 +4174,8 @@ input, select, textarea {
   {
 	background-color: #ffffff;
 	padding: 30px; /* This extends the background 20px beyond the content on all sides */
-	margin: -30px; /* Optionally, this can pull the edges of the div back to its original boundaries if needed */
-	border-radius: 15px; /* Rounds the corners. Adjust the pixel value to your preference */
+	margin: 0; /* Optionally, this can pull the edges of the div back to its original boundaries if needed */
+	border-radius: 0.25em; /* Rounds the corners. Adjust the pixel value to your preference */
 	margin-top: 100px; /* Adds a 20px margin to the top */
   }
 
@@ -4189,3 +4194,87 @@ input, select, textarea {
 	align-items: center; /* Centers content vertically */
 	text-align: center; /* Ensures text is centered if it wraps to a new line */
   }
+
+  .new-nav {
+	-moz-transition: background-color 0.2s ease, border-top-left-radius 0.2s ease, border-top-right-radius 0.2s ease, padding 0.2s ease;
+	-webkit-transition: background-color 0.2s ease, border-top-left-radius 0.2s ease, border-top-right-radius 0.2s ease, padding 0.2s ease;
+	-ms-transition: background-color 0.2s ease, border-top-left-radius 0.2s ease, border-top-right-radius 0.2s ease, padding 0.2s ease;
+	transition: background-color 0.2s ease, border-top-left-radius 0.2s ease, border-top-right-radius 0.2s ease, padding 0.2s ease;
+	background-color: #ffffff;
+	color: #636363;
+	position: fixed;
+	top: 0; /* Align to the top of the screen */
+	z-index: 1000; /* Ensures it's above other content */
+	width: 64em;
+	max-width: calc(100% - 4em);
+	padding: 1em;
+	background-color: rgba(247, 247, 247, 0.95);
+	border-top-left-radius: 0.25em;
+	border-top-right-radius: 0.25em;
+	border-bottom-left-radius: 0.25em;
+	border-bottom-right-radius: 0.25em;
+	cursor: default;
+	text-align: center;
+}
+
+.new-nav ul {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+	.new-nav ul li {
+		-moz-transition: margin 0.2s ease;
+		-webkit-transition: margin 0.2s ease;
+		-ms-transition: margin 0.2s ease;
+		transition: margin 0.2s ease;
+		display: inline-block;
+		margin: 0 0.35em;
+		padding: 0;
+		vertical-align: middle;
+	}
+
+	.new-nav ul li a {
+		-moz-transition: font-size 0.2s ease;
+		-webkit-transition: font-size 0.2s ease;
+		-ms-transition: font-size 0.2s ease;
+		transition: font-size 0.2s ease;
+		display: inline-block;
+		height: 2.25em;
+		line-height: 2.25em;
+		padding: 0 1.25em;
+		border: 0;
+		border-radius: 8px;
+		box-shadow: inset 0 0 0 1px transparent;
+	}
+
+		.new-nav ul li a:hover {
+			background-color: rgba(222, 222, 222, 0.25);
+		}
+
+		.new-nav ul li a.active {
+			background-color: #ffffff;
+			box-shadow: none;
+		}
+
+.new-nav.alt {
+position: fixed;
+top: 0;
+padding: 0.5em 1em;
+background-color: rgba(247, 247, 247, 0.95);
+border-top-left-radius: 0;
+border-top-right-radius: 0;
+z-index: 10000;
+}
+
+.new-nav.alt ul li {
+	margin: 0 0.175em;
+}
+
+	.new-nav.alt ul li a {
+		font-size: 0.9em;
+	}
+
+	.new-nav a:hover {
+		color: #636363;
+	}
