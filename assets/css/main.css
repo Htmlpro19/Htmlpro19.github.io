@@ -4088,6 +4088,15 @@ input, select, textarea {
 	margin: auto; /* Optional: to center the container itself if needed */
   }
 
+  
+  .project-logo {
+	height: 400px;
+	display: flex;
+	justify-content: center; /* Center horizontally */
+	align-items: center; /* Center vertically */
+	margin: auto; /* Optional: to center the container itself if needed */
+  }
+
   .work-experience-logo img {
 	max-width: 100%;
 	max-height: 100%;
@@ -4101,6 +4110,15 @@ input, select, textarea {
   }
 
   .project-image-container {
+	position: relative;
+	overflow: hidden; /* Prevents the scaled image from overflowing the container */
+	border: 5px solid #efa8b0; /* Highlighted border on hover with slight transparency */
+	height: 400px; /* Fixed height for all containers */
+	width: 600px;
+  }
+
+  
+  .project-image-container2 {
 	position: relative;
 	overflow: hidden; /* Prevents the scaled image from overflowing the container */
 	border: 5px solid #efa8b0; /* Highlighted border on hover with slight transparency */
